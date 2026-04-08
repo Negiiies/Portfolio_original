@@ -121,7 +121,7 @@ export default function Hero() {
     <>
       {/* Nav */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
         padding: '22px 36px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         pointerEvents: 'none',
