@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 
 const TOTAL_FRAMES = 60;
 const FRAME_PATH = (i: number) =>
@@ -89,9 +89,15 @@ export default function Hero() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    resize();
-    window.addEventListener('resize', resize);
+    /* ResizeObserver : synchronise le buffer avec la taille CSS avant chaque paint */
+    const syncSize = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w > 0 && h > 0) { canvas.width = w; canvas.height = h; }
+    };
+    syncSize();
+    const ro = new ResizeObserver(syncSize);
+    ro.observe(canvas);
     const draw = () => {
       curRef.current += (tgtRef.current - curRef.current) * 0.1;
       const idx = Math.max(0, Math.min(Math.round(curRef.current), TOTAL_FRAMES - 1));
@@ -106,15 +112,30 @@ export default function Hero() {
       rafRef.current = requestAnimationFrame(draw);
     };
     rafRef.current = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener('resize', resize); };
+    return () => { cancelAnimationFrame(rafRef.current); ro.disconnect(); };
   }, []);
 
   /* Scroll → frames */
-  const { scrollYProgress } = useScroll({ target: outerRef, offset: ['start start', 'end end'] });
-  const smooth = useSpring(scrollYProgress, { stiffness: 55, damping: 20, restDelta: 0.001 });
-  useEffect(() => smooth.on('change', (v) => { tgtRef.current = v * (TOTAL_FRAMES - 1); }), [smooth]);
-
-  const hintOpacity = useTransform(smooth, [0, 0.06], [1, 0]);
+  const hintRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const outer = outerRef.current;
+    if (!outer) return;
+    /* Sur mobile : buste statique (frame 0), pas d'animation scroll */
+    if (window.innerWidth <= 768) return;
+    const lockedH = window.innerHeight;
+    const onScroll = () => {
+      const rect = outer.getBoundingClientRect();
+      const totalScroll = outer.offsetHeight - lockedH;
+      const scrolled = Math.max(0, -rect.top);
+      const progress = totalScroll > 0 ? Math.min(1, scrolled / totalScroll) : 0;
+      tgtRef.current = progress * (TOTAL_FRAMES - 1);
+      if (hintRef.current) {
+        hintRef.current.style.opacity = scrolled < lockedH * 0.06 ? '1' : '0';
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   const pct = Math.round((loaded / TOTAL_FRAMES) * 100);
 
   return (
@@ -122,44 +143,43 @@ export default function Hero() {
       {/* Nav */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-        padding: '22px 36px',
+        padding: '14px 20px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         pointerEvents: 'none',
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
       }}>
-        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           {/* LD monogram */}
           <div style={{
-            width: '38px', height: '38px',
-            borderRadius: '8px',
+            width: '32px', height: '32px',
+            borderRadius: '7px',
             background: 'linear-gradient(135deg, #1a1400 0%, #2e2500 100%)',
             border: '1px solid rgba(212,175,55,0.35)',
             boxShadow: '0 0 12px rgba(212,175,55,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
+            <svg width="19" height="15" viewBox="0 0 22 18" fill="none">
               {/* L */}
               <path d="M2 2 L2 16 L8 16" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               {/* D */}
               <path d="M12 2 L12 16 M12 2 L16 2 Q20 2 20 9 Q20 16 16 16 L12 16" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div>
-            <div style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: '0.875rem', color: '#f1f5f9', letterSpacing: '-0.01em' }}>LE DYLAN</div>
-            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#475569', marginTop: '2px', letterSpacing: '0.05em' }}>École 89 — Paris</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: '0.8125rem', color: '#f1f5f9', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>LE DYLAN</div>
+            <div data-nav-sub style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.6rem', color: '#475569', marginTop: '1px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>École 89 — Paris</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '28px', pointerEvents: 'auto' }}>
+        <div style={{ display: 'flex', gap: '20px', pointerEvents: 'auto', flexShrink: 0 }}>
           {[['PROJETS', '#projets'], ['SKILLS', '#skills'], ['CONTACT', '#contact']].map(([l, h]) => (
-            <a key={h} href={h} style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.6875rem', fontWeight: 500, color: '#64748b', textDecoration: 'none', letterSpacing: '0.1em', transition: 'color 0.2s' }}
+            <a key={h} href={h} style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.625rem', fontWeight: 500, color: '#64748b', textDecoration: 'none', letterSpacing: '0.1em', transition: 'color 0.2s', whiteSpace: 'nowrap' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#f1f5f9')}
               onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
             >{l}</a>
           ))}
         </div>
       </nav>
-
       {/* ─── Outer : toute la section hero ─── */}
       <div ref={outerRef} style={{ position: 'relative', background: '#000' }}>
 
@@ -176,25 +196,24 @@ export default function Hero() {
           }} />
 
           {/* Scroll hint */}
-          <motion.div style={{
-            position: 'absolute', bottom: 28, left: '50%', translateX: '-50%',
+          <div ref={hintRef} style={{
+            position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
             zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-            opacity: hintOpacity, pointerEvents: 'none',
+            opacity: 1, transition: 'opacity 0.3s', pointerEvents: 'none',
           }}>
             <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.6rem', color: '#334155', letterSpacing: '0.14em', textTransform: 'uppercase' }}>scroll</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ animation: 'bounceArrow 1.6s ease-in-out infinite' }}>
               <path d="M6 1v10M6 11L2 7M6 11l4-4" stroke="#334155" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </motion.div>
+          </div>
         </div>
 
         {/* ─── Blocs qui scrollent par-dessus le buste ─── */}
         <div style={{
           position: 'relative',
           zIndex: 1,
-          marginTop: '-100vh', /* remonte sous le sticky pour se superposer */
+          marginTop: '-100vh',
         }}>
-          {/* Spacer : 100vh vide pour voir le buste complet en premier */}
           <div style={{ height: '100vh' }} />
 
           {/* Blocs de story */}
@@ -219,6 +238,7 @@ export default function Hero() {
 
       <style>{`
         @keyframes bounceArrow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+        @media (max-width: 480px) { [data-nav-sub] { display: none !important; } }
       `}</style>
     </>
   );
