@@ -35,13 +35,11 @@ export default function Contact() {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-      const res  = await fetch(`${apiUrl}/api/contact`, {
+      const res  = await fetch('https://formspree.io/f/xvzvyvbw', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      if (data.success) setSuccess(true); else setError('Une erreur est survenue.');
+      if (res.ok) setSuccess(true); else setError('Une erreur est survenue.');
     } catch { setError('Impossible de contacter le serveur.'); }
     finally { setLoading(false); }
   };
