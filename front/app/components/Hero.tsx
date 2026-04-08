@@ -89,7 +89,8 @@ export default function Hero() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    /* ResizeObserver : synchronise le buffer avec la taille CSS avant chaque paint */
+    /* refH capturé une fois — sert de référence fixe pour la taille du buste */
+    const refH = window.innerHeight;
     const syncSize = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
@@ -105,7 +106,8 @@ export default function Hero() {
       const { width: cw, height: ch } = canvas;
       ctx.clearRect(0, 0, cw, ch);
       if (bmp) {
-        const scale = (ch * 0.88) / bmp.height;
+        /* scale basé sur refH (fixe au montage), pas ch → buste stable même quand Safari cache sa barre */
+        const scale = (refH * 0.88) / bmp.height;
         const dw = bmp.width * scale, dh = bmp.height * scale;
         ctx.drawImage(bmp, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
       }
