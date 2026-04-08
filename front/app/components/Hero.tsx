@@ -290,7 +290,7 @@ function StoryBlock({ block }: { block: (typeof BLOCKS)[number] }) {
           <p style={{
             fontFamily: 'Inter, system-ui, sans-serif',
             fontSize: 'clamp(0.875rem, 1.2vw, 1rem)',
-            color: '#64748b', lineHeight: 1.8, margin: 0,
+            color: '#94a3b8', lineHeight: 1.8, margin: 0,
           }}>
             {block.body}
           </p>
