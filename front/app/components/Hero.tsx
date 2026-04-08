@@ -122,8 +122,6 @@ export default function Hero() {
   useEffect(() => {
     const outer = outerRef.current;
     if (!outer) return;
-    /* Sur mobile : buste statique (frame 0), pas d'animation scroll */
-    if (window.innerWidth <= 768) return;
     const lockedH = window.innerHeight;
     const onScroll = () => {
       const rect = outer.getBoundingClientRect();
