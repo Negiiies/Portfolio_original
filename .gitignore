@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js
+front/.next/
+front/out/
+front/.env.local
+front/.env*.local
+
+# Backend env
+back/.env
+
+# Build
+**/dist/
+**/.turbo/
+
+# Large files
+front/public/videos/
+
+# Misc
+.DS_Store
+*.log
+tsconfig.tsbuildinfo
+front/tsconfig.tsbuildinfo
