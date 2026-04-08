@@ -89,11 +89,7 @@ export default function Hero() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // Use screen.height on mobile to avoid resize when browser chrome shows/hides
-    const getH = () => window.screen?.height && window.innerWidth < 768
-      ? window.screen.height
-      : window.innerHeight;
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = getH(); };
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener('resize', resize);
     const draw = () => {
@@ -170,7 +166,6 @@ export default function Hero() {
         {/* ─── Buste + LE DYLAN — sticky en arrière-plan ─── */}
         <div style={{
           position: 'sticky', top: 0, height: '100vh',
-          minHeight: '-webkit-fill-available',
           zIndex: 0, overflow: 'hidden',
         }}>
           {/* Canvas */}
