@@ -8,7 +8,6 @@ import {
   useSpring,
   useInView,
 } from 'framer-motion';
-import type { MotionValue } from 'framer-motion';
 
 interface Project {
   number: string;
@@ -17,6 +16,7 @@ interface Project {
   description: string;
   tags: string[];
   status: string;
+  statusColor: 'gold' | 'green' | 'orange';
   link?: string;
   image: string;
   imageBg: string;
@@ -27,37 +27,91 @@ const projects: Project[] = [
     number: '01',
     title: 'SaaS Gamification',
     badge: 'SaaS B2B',
-    description: "Roue de la fortune multi-tenant pour gamifier la collecte d'avis Google. QR code temporaire, dashboard restaurant.",
+    description: "Plateforme multi-tenant permettant aux restaurants de créer des roues de la fortune pour gamifier la collecte d'avis Google. QR code temporaire, dashboard dédié.",
     tags: ['Next.js', 'TypeScript', 'Node.js', 'Multi-tenant'],
     status: 'Livré en production',
+    statusColor: 'green',
     link: 'https://ryturn.fr/',
     image: '/images/projects/saas.jpg',
-    imageBg: 'linear-gradient(135deg, #0a0a18 0%, #0d1a2e 100%)',
+    imageBg: 'linear-gradient(135deg, #e8e4dc 0%, #f5f2ec 40%, #ddd8ce 100%)',
   },
   {
     number: '02',
     title: 'Bel Institut',
     badge: 'Site Client',
-    description: 'Site pour un institut de maquillage permanent. Design élégant, réservation, témoignages clients.',
+    description: 'Site pour un institut de maquillage permanent. Design élégant, responsive, réservation en ligne et témoignages clients.',
     tags: ['Next.js', 'React', 'TypeScript', 'Responsive'],
     status: 'En ligne',
+    statusColor: 'green',
     link: 'https://belmaquillagepermanent.fr/',
     image: '/images/projects/bel.jpg',
-    imageBg: 'linear-gradient(135deg, #180a14 0%, #2e0d1a 100%)',
+    imageBg: 'linear-gradient(135deg, #ede9e1 0%, #f8f5ef 40%, #e2ddd5 100%)',
   },
   {
     number: '03',
     title: 'App École 89',
     badge: 'Application Interne',
-    description: 'Suivi pédagogique : présences, notes, progression. Sécurité intégrée dès la conception.',
+    description: 'Application web interne pour le suivi pédagogique à École 89. Gestion des présences, notes et progression avec sécurité dès la conception.',
     tags: ['React', 'Symfony', 'PHP', 'SQL'],
     status: 'Déployé en interne',
+    statusColor: 'green',
     image: '/images/projects/ecole89.jpg',
-    imageBg: 'linear-gradient(135deg, #0a0f18 0%, #05141a 100%)',
+    imageBg: 'linear-gradient(135deg, #e4e8e4 0%, #f2f5f2 40%, #d8ddd8 100%)',
+  },
+  {
+    number: '04',
+    title: 'Jeu Alibi',
+    badge: 'En développement',
+    description: "Jeu multijoueur d'enquête : deux joueurs partagent des informations communes, un inspecteur les interroge séparément pour détecter les incohérences. Interface 3D immersive.",
+    tags: ['Three.js', 'WebGL', 'Multijoueur', 'Node.js'],
+    status: 'En développement',
+    statusColor: 'orange',
+    image: '/images/projects/alibi.jpg',
+    imageBg: 'linear-gradient(135deg, #e8e6ed 0%, #f4f2f8 40%, #dddae5 100%)',
+  },
+  {
+    number: '05',
+    title: 'K-Shop',
+    badge: 'En développement',
+    description: "Site e-commerce spécialisé en produits coréens (cosmétiques, food, culture). Catalogue complet, panier, paiement sécurisé et gestion des stocks.",
+    tags: ['React', 'Express', 'PostgreSQL', 'E-commerce'],
+    status: 'En développement',
+    statusColor: 'orange',
+    image: '/images/projects/kshop.jpg',
+    imageBg: 'linear-gradient(135deg, #e8ede8 0%, #f2f7f2 40%, #dae3da 100%)',
   },
 ];
 
-const DWELL = 0.33;
+/* 5 cards → each takes 1/5 of scroll */
+const N = projects.length;
+const DWELL = 1 / N; // 0.2
+
+function makeScale(smooth: ReturnType<typeof useSpring>, idx: number) {
+  const center = (idx + 0.5) * DWELL;
+  const inStart  = center - DWELL * 0.6;
+  const inPeak   = center - DWELL * 0.1;
+  const outPeak  = center + DWELL * 0.1;
+  const outEnd   = center + DWELL * 0.6;
+  return useTransform(
+    smooth,
+    [Math.max(0, inStart), inPeak, outPeak, Math.min(1, outEnd)],
+    [0.72, 1.04, 1.04, 0.72],
+  );
+}
+
+function makeOpacity(smooth: ReturnType<typeof useSpring>, idx: number) {
+  const center = (idx + 0.5) * DWELL;
+  const inStart  = center - DWELL * 0.6;
+  const inPeak   = center - DWELL * 0.1;
+  const outPeak  = center + DWELL * 0.1;
+  const outEnd   = center + DWELL * 0.6;
+  return useTransform(
+    smooth,
+    [Math.max(0, inStart), inPeak, outPeak, Math.min(1, outEnd)],
+    [0.28, 1, 1, 0.28],
+  );
+}
+
 
 export default function Projects() {
   const outerRef      = useRef<HTMLDivElement>(null);
@@ -78,39 +132,17 @@ export default function Projects() {
   });
   const smooth = useSpring(scrollYProgress, { stiffness: 55, damping: 22, restDelta: 0.001 });
 
-  /* ── Desktop: scale active=1.15, inactive=0.68 ── */
-  const card0ScaleD = useTransform(smooth, [0, 0.22, DWELL + 0.08], [1.15, 1.15, 0.68]);
-  const card1ScaleD = useTransform(smooth,
-    [DWELL - 0.08, DWELL + 0.04, DWELL * 2 - 0.04, DWELL * 2 + 0.08],
-    [0.68, 1.15, 1.15, 0.68]);
-  const card2ScaleD = useTransform(smooth, [DWELL * 2 - 0.08, DWELL * 2 + 0.04, 1], [0.68, 1.15, 1.15]);
+  const cardScales    = projects.map((_, i) => makeScale(smooth, i));
+  const cardOpacities = projects.map((_, i) => makeOpacity(smooth, i));
 
-  /* ── Mobile: translate X so only active card is centered ── */
-  // card width ≈ 75vw, gap 16px — translate to center each
-  const mobileX = useTransform(smooth,
-    [0, DWELL - 0.05, DWELL + 0.05, DWELL * 2 - 0.05, DWELL * 2 + 0.05, 1],
-    ['0vw', '0vw', '-82vw', '-82vw', '-164vw', '-164vw']
-  );
-
-  /* ── opacity: active=1, inactive=0.28 ── */
-  const card0Op = useTransform(smooth, [0, 0.22, DWELL + 0.08], [1, 1, 0.28]);
-  const card1Op = useTransform(smooth,
-    [DWELL - 0.08, DWELL + 0.04, DWELL * 2 - 0.04, DWELL * 2 + 0.08],
-    [0.28, 1, 1, 0.28]);
-  const card2Op = useTransform(smooth, [DWELL * 2 - 0.08, DWELL * 2 + 0.04, 1], [0.28, 1, 1]);
-  const cardOpacities = [card0Op, card1Op, card2Op];
-
-  /* ── dashed border: active=1, inactive=0 ── */
-  const card0Border = useTransform(smooth, [0, 0.22, DWELL + 0.08], [1, 1, 0]);
-  const card1Border = useTransform(smooth,
-    [DWELL - 0.08, DWELL + 0.04, DWELL * 2 - 0.04, DWELL * 2 + 0.08],
-    [0, 1, 1, 0]);
-  const card2Border = useTransform(smooth, [DWELL * 2 - 0.08, DWELL * 2 + 0.04, 1], [0, 1, 1]);
-  const cardBorders  = [card0Border, card1Border, card2Border];
-  const cardScalesD  = [card0ScaleD, card1ScaleD, card2ScaleD];
+  /* Mobile: translate X to center active card (75vw wide + 7vw gap ≈ 82vw per step) */
+  const mobileStops = projects.map((_, i) => i / (N - 1));
+  const mobileVals  = projects.map((_, i) => `${-82 * i}vw`);
+  const mobileX = useTransform(smooth, mobileStops, mobileVals);
 
   return (
-    <div ref={outerRef} style={{ height: '400vh', position: 'relative' }}>
+    /* 500vh: 5 cards × 100vh */
+    <div ref={outerRef} style={{ height: '500vh', position: 'relative' }}>
       <div style={{
         position: 'sticky', top: 0, height: '100vh',
         overflow: 'hidden', background: '#000',
@@ -137,29 +169,30 @@ export default function Projects() {
               Projets
             </h2>
             <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#334155', letterSpacing: '0.06em' }}>
-              scroll →
+              {N} projets · scroll →
             </span>
           </motion.div>
         </div>
 
-        {/* ── DESKTOP: 3 cards côte à côte ── */}
+        {/* ── DESKTOP: all cards visible side by side ── */}
         {!isMobile && (
           <div style={{
             flex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '20px',
-            padding: '0 5vw 40px',
+            gap: '12px',
+            padding: '0 3vw 20px',
+            overflow: 'hidden',
           }}>
             {projects.map((project, i) => (
               <motion.div
                 key={project.title}
                 style={{
-                  width: 'clamp(180px, 22vw, 280px)',
-                  aspectRatio: '3 / 4',
+                  width: 'clamp(140px, 17vw, 240px)',
+                  height: 'clamp(200px, 58vh, 420px)',
                   flexShrink: 0,
-                  scale: cardScalesD[i],
+                  scale: cardScales[i],
                   opacity: cardOpacities[i],
                   borderRadius: '18px',
                   overflow: 'visible',
@@ -168,20 +201,20 @@ export default function Projects() {
                   userSelect: 'none',
                 }}
               >
-                <CardInner project={project} borderOp={cardBorders[i]} />
+                <CardInner project={project}  />
               </motion.div>
             ))}
           </div>
         )}
 
-        {/* ── MOBILE: 1 card centrée, les autres débordent sur les côtés ── */}
+        {/* ── MOBILE: 1 card centered, others peek on sides ── */}
         {isMobile && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
             <motion.div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '7vw',
-              paddingLeft: '12.5vw', /* center first card: (100 - 75) / 2 */
+              paddingLeft: '12.5vw',
               x: mobileX,
               width: 'max-content',
               paddingBottom: '40px',
@@ -200,7 +233,7 @@ export default function Projects() {
                     userSelect: 'none',
                   }}
                 >
-                  <CardInner project={project} borderOp={cardBorders[i]} />
+                  <CardInner project={project}  />
                 </motion.div>
               ))}
             </motion.div>
@@ -218,28 +251,29 @@ export default function Projects() {
   );
 }
 
-/* ── Card content (shared desktop + mobile) ── */
-function CardInner({ project, borderOp }: {
+/* ── Card content ── */
+function CardInner({ project }: {
   project: Project;
-  borderOp: MotionValue<number>;
 }) {
+  const statusColors = {
+    green:  { dot: '#22c55e', glow: 'rgba(34,197,94,0.7)' },
+    gold:   { dot: '#d4af37', glow: 'rgba(212,175,55,0.7)' },
+    orange: { dot: '#f97316', glow: 'rgba(249,115,22,0.7)' },
+  };
+  const sc = statusColors[project.statusColor];
+  const accentColor = project.statusColor === 'orange' ? '#f97316' : '#d4af37';
+  const accentBorder = project.statusColor === 'orange' ? 'rgba(249,115,22,0.4)' : 'rgba(212,175,55,0.3)';
+
+  /* details always visible */
+  const detailsOp = 1;
+
   return (
     <>
-      {/* Dashed gold border */}
-      <motion.div style={{
-        position: 'absolute', inset: '-8px',
-        borderRadius: '24px',
-        border: '2px dashed rgba(212,175,55,0.7)',
-        boxShadow: '0 0 16px rgba(212,175,55,0.18)',
-        pointerEvents: 'none',
-        opacity: borderOp,
-      }} />
 
-      {/* Inner clipped card */}
+      {/* Inner card */}
       <div style={{
-        position: 'absolute', inset: 0,
-        borderRadius: '18px', overflow: 'hidden',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.8)',
+        position: 'absolute', inset: 0, borderRadius: '18px',
+        overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.8)',
       }}>
         {/* BG */}
         <div style={{ position: 'absolute', inset: 0, background: project.imageBg }}>
@@ -250,99 +284,121 @@ function CardInner({ project, borderOp }: {
           />
         </div>
 
-        {/* Gradient */}
+        {/* Gradient — dark at bottom for text on light marble */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 28%, rgba(0,0,0,0.6) 62%, rgba(0,0,0,0.96) 100%)',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, transparent 25%, rgba(0,0,0,0.45) 58%, rgba(0,0,0,0.92) 100%)',
           pointerEvents: 'none',
         }} />
 
-        {/* Top */}
-        <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* WIP shimmer */}
+        {project.statusColor === 'orange' && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+            background: 'linear-gradient(90deg, transparent, #f97316, #fbbf24, #f97316, transparent)',
+            animation: 'shimmer 2.4s ease-in-out infinite',
+          }} />
+        )}
+
+        {/* Top row — always visible */}
+        <div style={{ position: 'absolute', top: '14px', left: '14px', right: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: '0.6rem',
-            color: '#d4af37', background: 'rgba(0,0,0,0.6)',
+            fontFamily: 'JetBrains Mono, monospace', fontSize: '0.58rem',
+            color: accentColor, background: 'rgba(0,0,0,0.6)',
             backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(212,175,55,0.3)',
-            borderRadius: '999px', padding: '4px 10px',
+            border: `1px solid ${accentBorder}`,
+            borderRadius: '999px', padding: '3px 9px',
             letterSpacing: '0.07em', textTransform: 'uppercase',
           }}>
             {project.badge}
           </span>
-          <span style={{ fontFamily: 'Archivo Black, sans-serif', fontSize: '0.9rem', color: 'rgba(255,255,255,0.12)', letterSpacing: '-0.02em' }}>
+          <span style={{ fontFamily: 'Archivo Black, sans-serif', fontSize: '0.85rem', color: 'rgba(255,255,255,0.12)' }}>
             {project.number}
           </span>
         </div>
 
-        {/* Bottom */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 'clamp(14px,2.5vw,20px)' }}>
+        {/* Bottom — title always visible, details only when active */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 14px 18px' }}>
+
+          {/* Title — always visible */}
           <h3 style={{
             fontFamily: 'Archivo Black, Arial Black, sans-serif',
-            fontSize: 'clamp(1rem, 2.5vw, 1.35rem)',
+            fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
             fontWeight: 900, color: '#f1f5f9',
             letterSpacing: '-0.03em', lineHeight: 1.1,
-            margin: '0 0 6px',
+            margin: '0 0 10px',
           }}>
             {project.title}
           </h3>
 
-          <p style={{
-            fontFamily: 'Inter, system-ui, sans-serif',
-            fontSize: 'clamp(0.72rem, 1.2vw, 0.82rem)',
-            color: 'rgba(148,163,184,0.85)',
-            lineHeight: 1.55, margin: '0 0 10px',
-          }}>
-            {project.description}
-          </p>
+          {/* Details — fade in when active */}
+          <motion.div style={{ opacity: detailsOp }}>
+            <p style={{
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontSize: 'clamp(0.7rem, 1.1vw, 0.8rem)',
+              color: 'rgba(148,163,184,0.9)',
+              lineHeight: 1.55, margin: '0 0 10px',
+            }}>
+              {project.description}
+            </p>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-            {project.tags.map((tag) => (
-              <span key={tag} style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: '0.58rem',
-                color: '#b8960c',
-                background: 'rgba(212,175,55,0.08)',
-                border: '1px solid rgba(212,175,55,0.2)',
-                borderRadius: '4px', padding: '2px 7px',
-              }}>
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d4af37', boxShadow: '0 0 5px rgba(212,175,55,0.7)', display: 'block', flexShrink: 0 }} />
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#64748b' }}>{project.status}</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+              {project.tags.map((tag) => (
+                <span key={tag} style={{
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: '0.58rem',
+                  color: '#b8960c',
+                  background: 'rgba(212,175,55,0.08)',
+                  border: '1px solid rgba(212,175,55,0.2)',
+                  borderRadius: '4px', padding: '2px 7px',
+                }}>
+                  {tag}
+                </span>
+              ))}
             </div>
-            {project.link ? (
-              <a
-                href={project.link} target="_blank" rel="noopener noreferrer"
-                style={{
-                  fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 600,
-                  color: '#d4af37', textDecoration: 'none',
-                  display: 'flex', alignItems: 'center', gap: '4px', outline: 'none',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-              >
-                Voir →
-              </a>
-            ) : (
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#334155', fontStyle: 'italic' }}>Confidentiel</span>
-            )}
-          </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: sc.dot, boxShadow: `0 0 5px ${sc.glow}`, display: 'block', flexShrink: 0 }} />
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#64748b' }}>{project.status}</span>
+              </div>
+              {project.link ? (
+                <a
+                  href={project.link} target="_blank" rel="noopener noreferrer"
+                  style={{
+                    fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 600,
+                    color: accentColor, textDecoration: 'none', outline: 'none',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                >
+                  Voir →
+                </a>
+              ) : (
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#475569', fontStyle: 'italic' }}>
+                  {project.statusColor === 'orange' ? 'Bientôt' : 'Confidentiel'}
+                </span>
+              )}
+            </div>
+          </motion.div>
         </div>
       </div>
+
+      <style>{`@keyframes shimmer { 0%,100%{opacity:0.5} 50%{opacity:1} }`}</style>
     </>
   );
 }
 
+/* ── Dot indicators ── */
 function ActiveDots({ smooth }: { smooth: ReturnType<typeof useSpring> }) {
-  const dot0 = useTransform(smooth, [0, DWELL - 0.05, DWELL + 0.05], [1, 1, 0.22]);
-  const dot1 = useTransform(smooth,
-    [DWELL - 0.05, DWELL + 0.05, DWELL * 2 - 0.05, DWELL * 2 + 0.05],
-    [0.22, 1, 1, 0.22]);
-  const dot2 = useTransform(smooth, [DWELL * 2 - 0.05, DWELL * 2 + 0.05, 1], [0.22, 1, 1]);
+  const dots = projects.map((_, i) => {
+    const center   = (i + 0.5) * DWELL;
+    const inStart  = center - DWELL * 0.5;
+    const outEnd   = center + DWELL * 0.5;
+    return useTransform(smooth,
+      [Math.max(0, inStart), center, Math.min(1, outEnd)],
+      [0.22, 1, 0.22],
+    );
+  });
 
   return (
     <div style={{
@@ -350,10 +406,13 @@ function ActiveDots({ smooth }: { smooth: ReturnType<typeof useSpring> }) {
       transform: 'translateX(-50%)',
       display: 'flex', gap: '8px', zIndex: 10,
     }}>
-      {[dot0, dot1, dot2].map((op, i) => (
+      {dots.map((op, i) => (
         <motion.div key={i} style={{
           width: '6px', height: '6px', borderRadius: '50%',
-          background: '#d4af37', boxShadow: '0 0 5px rgba(212,175,55,0.6)',
+          background: projects[i].statusColor === 'orange' ? '#f97316' : '#d4af37',
+          boxShadow: projects[i].statusColor === 'orange'
+            ? '0 0 5px rgba(249,115,22,0.6)'
+            : '0 0 5px rgba(212,175,55,0.6)',
           opacity: op,
         }} />
       ))}
