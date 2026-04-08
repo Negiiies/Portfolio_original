@@ -127,9 +127,28 @@ export default function Hero() {
         pointerEvents: 'none',
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
       }}>
-        <div style={{ pointerEvents: 'auto' }}>
-          <div style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: '0.875rem', color: '#f1f5f9', letterSpacing: '-0.01em' }}>LE DYLAN</div>
-          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#475569', marginTop: '2px', letterSpacing: '0.05em' }}>École 89 — Paris</div>
+        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* LD monogram */}
+          <div style={{
+            width: '38px', height: '38px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #1a1400 0%, #2e2500 100%)',
+            border: '1px solid rgba(212,175,55,0.35)',
+            boxShadow: '0 0 12px rgba(212,175,55,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
+              {/* L */}
+              <path d="M2 2 L2 16 L8 16" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              {/* D */}
+              <path d="M12 2 L12 16 M12 2 L16 2 Q20 2 20 9 Q20 16 16 16 L12 16" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: '0.875rem', color: '#f1f5f9', letterSpacing: '-0.01em' }}>LE DYLAN</div>
+            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#475569', marginTop: '2px', letterSpacing: '0.05em' }}>École 89 — Paris</div>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '28px', pointerEvents: 'auto' }}>
           {[['PROJETS', '#projets'], ['SKILLS', '#skills'], ['CONTACT', '#contact']].map(([l, h]) => (
