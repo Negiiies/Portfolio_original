@@ -152,7 +152,7 @@ function AlbumCard({ project, scale, opacity, vinylX }: {
   vinylX: any;
 }) {
   return (
-    <motion.div style={{ scale, opacity, transformOrigin: 'center', position: 'relative', flexShrink: 0 }}>
+    <motion.div style={{ scale, opacity, transformOrigin: 'center', position: 'relative', flexShrink: 0, width: '100%', height: '100%' }}>
       {/* Vinyl behind */}
       <motion.div style={{
         position: 'absolute',
