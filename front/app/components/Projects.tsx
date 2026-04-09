@@ -30,7 +30,7 @@ const projects: Project[] = [
     statusColor: 'green',
     link: 'https://ryturn.fr/',
     image: '/images/projects/saas.jpg',
-    imageBg: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    imageBg: 'linear-gradient(145deg, #0f4c2a 0%, #1a7a40 50%, #0d3d22 100%)',
     accentColor: '#22c55e',
   },
   {
@@ -44,7 +44,7 @@ const projects: Project[] = [
     statusColor: 'green',
     link: 'https://belmaquillagepermanent.fr/',
     image: '/images/projects/bel.jpg',
-    imageBg: 'linear-gradient(145deg, #2d1b33 0%, #3d1a3a 50%, #1a0d1f 100%)',
+    imageBg: 'linear-gradient(145deg, #6b1a5a 0%, #9d2b8a 50%, #4a0f3d 100%)',
     accentColor: '#ec4899',
   },
   {
@@ -57,7 +57,7 @@ const projects: Project[] = [
     status: 'Déployé',
     statusColor: 'green',
     image: '/images/projects/ecole89.jpg',
-    imageBg: 'linear-gradient(145deg, #0d2137 0%, #0a3d62 50%, #071e2a 100%)',
+    imageBg: 'linear-gradient(145deg, #0d3a6e 0%, #1a5faa 50%, #0a2a52 100%)',
     accentColor: '#3b82f6',
   },
   {
@@ -70,7 +70,7 @@ const projects: Project[] = [
     status: 'En développement',
     statusColor: 'orange',
     image: '/images/projects/alibi.jpg',
-    imageBg: 'linear-gradient(145deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%)',
+    imageBg: 'linear-gradient(145deg, #7a2d00 0%, #c24800 50%, #5a2000 100%)',
     accentColor: '#f97316',
   },
   {
@@ -83,7 +83,7 @@ const projects: Project[] = [
     status: 'En développement',
     statusColor: 'orange',
     image: '/images/projects/kshop.jpg',
-    imageBg: 'linear-gradient(145deg, #0a1a0a 0%, #1a3a1a 50%, #0a1a0a 100%)',
+    imageBg: 'linear-gradient(145deg, #1a4a2e 0%, #2d7a4a 50%, #0f3320 100%)',
     accentColor: '#f97316',
   },
 ];
@@ -97,8 +97,8 @@ function useCardProgress(smooth: ReturnType<typeof useSpring>, idx: number) {
   const inPeak   = Math.max(0, center - DWELL * 0.15);
   const outPeak  = Math.min(1, center + DWELL * 0.15);
   const outEnd   = Math.min(1, center + DWELL * 0.7);
-  const scale   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.80, 1.02, 1.02, 0.80]);
-  const opacity = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.35, 1, 1, 0.35]);
+  const scale   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.85, 1.04, 1.04, 0.85]);
+  const opacity = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.55, 1, 1, 0.55]);
   const vinyl   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], ['0%', '40%', '40%', '0%']);
   return { scale, opacity, vinyl };
 }
