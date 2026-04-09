@@ -92,13 +92,14 @@ const N = projects.length;
 const DWELL = 1 / N;
 
 function useCardProgress(smooth: ReturnType<typeof useSpring>, idx: number) {
-  const center = (idx + 0.5) * DWELL;
-  const start  = center - DWELL * 0.6;
-  const peak   = center - DWELL * 0.1;
-  const end    = center + DWELL * 0.6;
-  const scale   = useTransform(smooth, [Math.max(0,start), peak, center, Math.min(1,end)], [0.78, 1.0, 1.0, 0.78]);
-  const opacity = useTransform(smooth, [Math.max(0,start), peak, center, Math.min(1,end)], [0.25, 1, 1, 0.25]);
-  const vinyl   = useTransform(smooth, [Math.max(0,start), peak, center, Math.min(1,end)], ['0%', '38%', '38%', '0%']);
+  const center   = (idx + 0.5) * DWELL;
+  const inStart  = Math.max(0, center - DWELL * 0.7);
+  const inPeak   = Math.max(0, center - DWELL * 0.15);
+  const outPeak  = Math.min(1, center + DWELL * 0.15);
+  const outEnd   = Math.min(1, center + DWELL * 0.7);
+  const scale   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.80, 1.02, 1.02, 0.80]);
+  const opacity = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.35, 1, 1, 0.35]);
+  const vinyl   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], ['0%', '40%', '40%', '0%']);
   return { scale, opacity, vinyl };
 }
 
@@ -338,7 +339,9 @@ export default function Projects() {
   }, []);
 
   const { scrollYProgress } = useScroll({ target: outerRef, offset: ['start start', 'end end'] });
-  const smooth = useSpring(scrollYProgress, { stiffness: 55, damping: 22, restDelta: 0.001 });
+  /* Remap 0→1 to 0.1→0.9 so card 0 is already active at scroll=0 */
+  const remapped = useTransform(scrollYProgress, [0, 1], [0.1, 0.9]);
+  const smooth = useSpring(remapped, { stiffness: 55, damping: 22, restDelta: 0.001 });
 
   const cards = projects.map((_, i) => useCardProgress(smooth, i));
 
