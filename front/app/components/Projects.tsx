@@ -1,446 +1,335 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { useRef, useEffect, useState, Suspense } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { ScrollControls, useScroll, Text } from '@react-three/drei';
+import { motion, useInView } from 'framer-motion';
+import * as THREE from 'three';
 
-interface Project {
-  number: string;
-  title: string;
-  artist: string;       // sous-titre style "artiste"
-  badge: string;
-  description: string;
-  tracks: string[];     // tags → tracklist
-  status: string;
-  statusColor: 'gold' | 'green' | 'orange';
-  link?: string;
-  image: string;
-  imageBg: string;
-  accentColor: string;
-}
-
-const projects: Project[] = [
+/* ── Data ── */
+const PROJECTS = [
   {
-    number: '01',
-    title: 'SaaS Gamification',
-    artist: 'Next.js · Node.js · Multi-tenant',
-    badge: 'SaaS B2B',
-    description: "Plateforme multi-tenant permettant aux restaurants de créer des roues de la fortune pour gamifier la collecte d'avis Google.",
-    tracks: ['01  Multi-tenant architecture', '02  QR code temporaire', '03  Dashboard dédié', '04  Livré en production'],
-    status: 'Livré en production',
-    statusColor: 'green',
+    title: 'SaaS\nGamification',
+    sub: 'Next.js · Node.js · Multi-tenant',
+    badge: 'PROD',
+    desc: 'Roues de la fortune pour gamifier\nles avis Google restaurants.',
+    color: '#22c55e',
     link: 'https://ryturn.fr/',
-    image: '/images/projects/saas.jpg',
-    imageBg: 'linear-gradient(145deg, #0f4c2a 0%, #1a7a40 50%, #0d3d22 100%)',
-    accentColor: '#22c55e',
+    pos: [-4, 0.4, -3] as [number, number, number],
+    rot: [0, 0.5, 0] as [number, number, number],
   },
   {
-    number: '02',
     title: 'Bel Institut',
-    artist: 'Next.js · React · TypeScript',
-    badge: 'Site Client',
-    description: 'Site pour un institut de maquillage permanent. Design élégant, responsive, réservation en ligne.',
-    tracks: ['01  Design élégant', '02  Réservation en ligne', '03  Témoignages clients', '04  Responsive mobile'],
-    status: 'En ligne',
-    statusColor: 'green',
+    sub: 'Next.js · React · TypeScript',
+    badge: 'LIVE',
+    desc: 'Institut de maquillage permanent.\nDesign élégant, réservation en ligne.',
+    color: '#ec4899',
     link: 'https://belmaquillagepermanent.fr/',
-    image: '/images/projects/bel.jpg',
-    imageBg: 'linear-gradient(145deg, #6b1a5a 0%, #9d2b8a 50%, #4a0f3d 100%)',
-    accentColor: '#ec4899',
+    pos: [-1.5, 0.6, -6] as [number, number, number],
+    rot: [0, 0.12, 0] as [number, number, number],
   },
   {
-    number: '03',
-    title: 'App École 89',
-    artist: 'React · Symfony · PHP · SQL',
-    badge: 'Application Interne',
-    description: 'Application web interne pour le suivi pédagogique. Gestion des présences, notes et progression.',
-    tracks: ['01  Suivi pédagogique', '02  Gestion des présences', '03  Sécurité by design', '04  Déployé en interne'],
-    status: 'Déployé',
-    statusColor: 'green',
-    image: '/images/projects/ecole89.jpg',
-    imageBg: 'linear-gradient(145deg, #0d3a6e 0%, #1a5faa 50%, #0a2a52 100%)',
-    accentColor: '#3b82f6',
+    title: 'App\nÉcole 89',
+    sub: 'React · Symfony · PHP · SQL',
+    badge: 'INTERNE',
+    desc: 'Suivi pédagogique, présences\net notes — sécurité by design.',
+    color: '#3b82f6',
+    pos: [1.8, 0.2, -9] as [number, number, number],
+    rot: [0, -0.18, 0] as [number, number, number],
   },
   {
-    number: '04',
     title: 'Jeu Alibi',
-    artist: 'Three.js · WebGL · Node.js',
-    badge: 'En développement',
-    description: "Jeu multijoueur d'enquête en 3D. Deux joueurs partagent des infos, un inspecteur cherche les incohérences.",
-    tracks: ['01  Interface 3D immersive', '02  Multijoueur temps réel', '03  WebGL rendering', '04  Bientôt disponible'],
-    status: 'En développement',
-    statusColor: 'orange',
-    image: '/images/projects/alibi.jpg',
-    imageBg: 'linear-gradient(145deg, #7a2d00 0%, #c24800 50%, #5a2000 100%)',
-    accentColor: '#f97316',
+    sub: 'Three.js · WebGL · Node.js',
+    badge: 'WIP',
+    desc: "Jeu d'enquête multijoueur 3D.\nDeux suspects, un inspecteur.",
+    color: '#f97316',
+    pos: [4.5, 0.5, -5] as [number, number, number],
+    rot: [0, -0.52, 0] as [number, number, number],
   },
   {
-    number: '05',
     title: 'K-Shop',
-    artist: 'React · Express · PostgreSQL',
-    badge: 'En développement',
-    description: "Site e-commerce produits coréens. Catalogue, panier, paiement sécurisé et gestion des stocks.",
-    tracks: ['01  Catalogue complet', '02  Panier & paiement', '03  Gestion des stocks', '04  Bientôt disponible'],
-    status: 'En développement',
-    statusColor: 'orange',
-    image: '/images/projects/kshop.jpg',
-    imageBg: 'linear-gradient(145deg, #1a4a2e 0%, #2d7a4a 50%, #0f3320 100%)',
-    accentColor: '#f97316',
+    sub: 'React · Express · PostgreSQL',
+    badge: 'WIP',
+    desc: 'E-commerce produits coréens.\nCatalogue, panier, paiement sécurisé.',
+    color: '#a855f7',
+    pos: [0.5, 0.8, -13] as [number, number, number],
+    rot: [0, -0.06, 0] as [number, number, number],
   },
 ];
 
-const N = projects.length;
-const DWELL = 1 / N;
+/* ── Single floating screen ── */
+function Screen({ project, index }: { project: typeof PROJECTS[0]; index: number }) {
+  const groupRef  = useRef<THREE.Group>(null);
+  const lightRef  = useRef<THREE.PointLight>(null);
+  const [hovered, setHovered] = useState(false);
+  const w = 2.6; const h = 1.6;
 
-function useCardProgress(smooth: ReturnType<typeof useSpring>, idx: number) {
-  const center   = (idx + 0.5) * DWELL;
-  const inStart  = Math.max(0, center - DWELL * 0.7);
-  const inPeak   = Math.max(0, center - DWELL * 0.15);
-  const outPeak  = Math.min(1, center + DWELL * 0.15);
-  const outEnd   = Math.min(1, center + DWELL * 0.7);
-  const scale   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.85, 1.04, 1.04, 0.85]);
-  const opacity = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], [0.55, 1, 1, 0.55]);
-  const vinyl   = useTransform(smooth, [inStart, inPeak, outPeak, outEnd], ['0%', '40%', '40%', '0%']);
-  return { scale, opacity, vinyl };
-}
+  useFrame(() => {
+    if (!groupRef.current) return;
+    groupRef.current.position.y = project.pos[1] + Math.sin(Date.now() * 0.001 + index * 1.3) * 0.07;
+    if (lightRef.current) {
+      lightRef.current.intensity = hovered
+        ? 3 + Math.sin(Date.now() * 0.004) * 0.6
+        : 1 + Math.sin(Date.now() * 0.002 + index) * 0.25;
+    }
+  });
 
-/* Vinyl record SVG */
-function Vinyl({ color, spinning }: { color: string; spinning: boolean }) {
   return (
-    <div style={{
-      width: '100%', height: '100%', borderRadius: '50%',
-      background: '#111',
-      boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.6)',
-      position: 'relative', overflow: 'hidden',
-      animation: spinning ? 'spin 4s linear infinite' : 'none',
-    }}>
-      {/* Grooves */}
-      {[20, 28, 36, 44, 52, 60, 68, 76, 84].map(r => (
-        <div key={r} style={{
-          position: 'absolute',
-          inset: `${(100-r)/2}%`,
-          borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.04)',
-        }} />
-      ))}
-      {/* Label center */}
-      <div style={{
-        position: 'absolute', inset: '30%',
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${color}33, ${color}11)`,
-        border: `1px solid ${color}44`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{ width: '18%', height: '18%', borderRadius: '50%', background: '#000', border: `1px solid ${color}66` }} />
-      </div>
-      {/* Shine */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '50%',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)',
-        pointerEvents: 'none',
-      }} />
-    </div>
+    <group ref={groupRef} position={project.pos} rotation={project.rot}>
+      <pointLight ref={lightRef} color={project.color} intensity={1} distance={5} />
+
+      {/* Screen panel */}
+      <mesh
+        onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() =>  { setHovered(false); document.body.style.cursor = 'default'; }}
+        onClick={() => project.link && window.open(project.link, '_blank')}
+      >
+        <planeGeometry args={[w, h]} />
+        <meshStandardMaterial
+          color="#080808"
+          emissive={new THREE.Color(project.color)}
+          emissiveIntensity={hovered ? 0.18 : 0.06}
+          roughness={0.15} metalness={0.9}
+        />
+      </mesh>
+
+      {/* Glowing border */}
+      <mesh>
+        <planeGeometry args={[w + 0.05, h + 0.05]} />
+        <meshBasicMaterial
+          color={project.color}
+          transparent
+          opacity={hovered ? 0.25 : 0.08}
+          side={THREE.BackSide}
+        />
+      </mesh>
+
+      {/* Badge */}
+      <Text position={[-w / 2 + 0.18, h / 2 - 0.18, 0.01]} fontSize={0.09}
+        color={project.color} anchorX="left" letterSpacing={0.12}
+        outlineWidth={0} font={undefined}>
+        {`● ${project.badge}`}
+      </Text>
+
+      {/* Title */}
+      <Text position={[0, h / 2 - 0.52, 0.01]} fontSize={0.21}
+        color="#f1f5f9" anchorX="center" maxWidth={w - 0.3}
+        lineHeight={1.2} letterSpacing={-0.02} font={undefined}>
+        {project.title}
+      </Text>
+
+      {/* Sub */}
+      <Text position={[0, h / 2 - 0.95, 0.01]} fontSize={0.085}
+        color={project.color} anchorX="center" fillOpacity={0.75}
+        letterSpacing={0.04} font={undefined}>
+        {project.sub}
+      </Text>
+
+      {/* Divider */}
+      <mesh position={[0, 0.08, 0.01]}>
+        <planeGeometry args={[w - 0.5, 0.004]} />
+        <meshBasicMaterial color={project.color} transparent opacity={0.2} />
+      </mesh>
+
+      {/* Description */}
+      <Text position={[0, -0.22, 0.01]} fontSize={0.095}
+        color="#94a3b8" anchorX="center" maxWidth={w - 0.4}
+        textAlign="center" lineHeight={1.55} font={undefined}>
+        {project.desc}
+      </Text>
+
+      {/* CTA */}
+      {project.link && (
+        <Text position={[0, -h / 2 + 0.22, 0.01]} fontSize={0.1}
+          color={project.color} anchorX="center" letterSpacing={0.08} font={undefined}>
+          {'↗  VOIR LE PROJET'}
+        </Text>
+      )}
+
+      {/* Wire */}
+      <mesh position={[0, h / 2 + 0.45, 0]}>
+        <cylinderGeometry args={[0.004, 0.004, 0.9, 4]} />
+        <meshStandardMaterial color="#1e293b" metalness={1} roughness={0.4} />
+      </mesh>
+    </group>
   );
 }
 
-function AlbumCard({ project, scale, opacity, vinylX }: {
-  project: Project;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  scale: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  opacity: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vinylX: any;
-}) {
+/* ── Gold dust particles ── */
+function Dust() {
+  const ref = useRef<THREE.Points>(null);
+  const n = 250;
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i*3]   = (Math.random() - 0.5) * 22;
+    pos[i*3+1] = Math.random() * 7 - 0.5;
+    pos[i*3+2] = Math.random() * -20;
+  }
+  useFrame(() => { if (ref.current) ref.current.rotation.y += 0.0003; });
   return (
-    <motion.div style={{ scale, opacity, transformOrigin: 'center', position: 'relative', flexShrink: 0, width: '100%', height: '100%' }}>
-      {/* Vinyl behind */}
-      <motion.div style={{
-        position: 'absolute',
-        top: '5%', right: 0,
-        width: '90%', height: '90%',
-        x: vinylX,
-        zIndex: 0,
-      }}>
-        <Vinyl color={project.accentColor} spinning={true} />
-      </motion.div>
-
-      {/* Album cover */}
-      <div style={{
-        width: '100%', height: '100%',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        position: 'relative', zIndex: 1,
-        boxShadow: `0 24px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06)`,
-      }}>
-        {/* BG */}
-        <div style={{ position: 'absolute', inset: 0, background: project.imageBg }}>
-          <img src={project.image} alt={project.title} draggable={false}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
-          />
-        </div>
-
-        {/* Overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.85) 100%)',
-        }} />
-
-        {/* WIP strip */}
-        {project.statusColor === 'orange' && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-            background: `linear-gradient(90deg, transparent, ${project.accentColor}, transparent)`,
-            animation: 'shimmer 2.4s ease-in-out infinite',
-          }} />
-        )}
-
-        {/* Badge */}
-        <div style={{ position: 'absolute', top: 12, left: 12 }}>
-          <span style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: '0.55rem',
-            color: project.accentColor,
-            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-            border: `1px solid ${project.accentColor}44`,
-            borderRadius: '999px', padding: '3px 9px',
-            letterSpacing: '0.07em', textTransform: 'uppercase',
-          }}>
-            {project.badge}
-          </span>
-        </div>
-
-        {/* Number */}
-        <div style={{ position: 'absolute', top: 10, right: 12 }}>
-          <span style={{ fontFamily: 'Archivo Black, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.1)' }}>
-            {project.number}
-          </span>
-        </div>
-
-        {/* Bottom info */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px' }}>
-          <div style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: 'clamp(0.9rem, 1.8vw, 1.15rem)', color: '#f1f5f9', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '4px' }}>
-            {project.title}
-          </div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.55rem', color: project.accentColor, opacity: 0.8, letterSpacing: '0.06em' }}>
-            {project.artist}
-          </div>
-        </div>
-      </div>
-    </motion.div>
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[pos, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color="#d4af37" size={0.025} transparent opacity={0.35} sizeAttenuation />
+    </points>
   );
 }
 
-/* Now Playing bar */
-function NowPlaying({ smooth }: { smooth: ReturnType<typeof useSpring> }) {
-  const [active, setActive] = useState(0);
-  useEffect(() => smooth.on('change', v => {
-    setActive(Math.min(N - 1, Math.round(v * N - 0.5)));
-  }), [smooth]);
+/* ── Floor grid ── */
+function Floor() {
+  return (
+    <gridHelper args={[40, 40, '#1a1a1a', '#111111']} position={[0, -1.1, -8]} />
+  );
+}
 
-  const p = projects[Math.max(0, Math.min(N-1, active))];
+/* ── Camera driven by ScrollControls ── */
+function Rig() {
+  const scroll = useScroll();
+  const { camera } = useThree();
 
+  useFrame(() => {
+    const t = scroll.offset;
+    camera.position.z += (3 - t * 15 - camera.position.z) * 0.06;
+    camera.position.x += (Math.sin(t * Math.PI * 0.7) * 1.2 - camera.position.x) * 0.06;
+    camera.position.y += (1.2 + Math.sin(t * Math.PI * 0.5) * 0.3 - camera.position.y) * 0.06;
+    camera.lookAt(new THREE.Vector3(camera.position.x * 0.3, 0.4, camera.position.z - 10));
+  });
+
+  return null;
+}
+
+/* ── Scene ── */
+function Scene() {
+  return (
+    <>
+      <color attach="background" args={['#030303']} />
+      <fog attach="fog" args={['#030303', 10, 24]} />
+      <ambientLight intensity={0.1} />
+      <directionalLight position={[0, 10, 2]} intensity={0.25} color="#e2e8f0" />
+      <pointLight position={[0, 5, 0]} intensity={0.6} color="#d4af37" distance={20} />
+      <Rig />
+      <Floor />
+      <Dust />
+      {PROJECTS.map((p, i) => <Screen key={p.title} project={p} index={i} />)}
+    </>
+  );
+}
+
+/* ── HUD overlay ── */
+function HUD({ active }: { active: number }) {
+  const p = PROJECTS[Math.max(0, Math.min(PROJECTS.length - 1, active))];
   return (
     <motion.div
       key={active}
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
       style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '16px 6vw 20px',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
-        display: 'flex', alignItems: 'center', gap: '24px',
-        zIndex: 10,
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+        padding: '14px 5vw 18px',
+        background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)',
+        display: 'flex', alignItems: 'center', gap: '18px',
+        pointerEvents: 'none',
       }}
     >
-      {/* Mini cover */}
-      <div style={{
-        width: 42, height: 42, borderRadius: '6px', flexShrink: 0,
-        background: p.imageBg, overflow: 'hidden', position: 'relative',
-        boxShadow: `0 0 12px ${p.accentColor}44`,
-      }}>
-        <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }} />
-      </div>
-
-      {/* Info */}
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, boxShadow: `0 0 10px ${p.color}`, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {p.title}
+        <div style={{ fontFamily: 'Archivo Black, sans-serif', fontSize: '0.85rem', color: '#f1f5f9', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {p.title.replace('\n', ' ')}
         </div>
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.6rem', color: p.accentColor, marginTop: '2px', opacity: 0.8 }}>
-          {p.artist}
-        </div>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.58rem', color: p.color, marginTop: 2, opacity: 0.8 }}>{p.sub}</div>
       </div>
-
-      {/* Tracklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0, flex: 1.5 }}>
-        {p.tracks.slice(0, 3).map((t, i) => (
-          <div key={i} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.58rem', color: i === 0 ? p.accentColor : '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {t}
-          </div>
-        ))}
-      </div>
-
-      {/* Link */}
-      <div style={{ flexShrink: 0 }}>
-        {p.link ? (
-          <a href={p.link} target="_blank" rel="noopener noreferrer" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 600,
-            color: p.accentColor, textDecoration: 'none',
-            padding: '7px 16px', borderRadius: '999px',
-            border: `1px solid ${p.accentColor}44`,
-            background: `${p.accentColor}11`,
-            transition: 'background 0.2s',
-          }}
-            onMouseEnter={e => (e.currentTarget.style.background = `${p.accentColor}22`)}
-            onMouseLeave={e => (e.currentTarget.style.background = `${p.accentColor}11`)}
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            Voir
-          </a>
-        ) : (
-          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.6rem', color: '#1e293b' }}>
-            {p.statusColor === 'orange' ? 'bientôt' : '—'}
-          </span>
-        )}
-      </div>
-
-      {/* Dots */}
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-        {projects.map((proj, i) => (
+      <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
+        {PROJECTS.map((proj, i) => (
           <div key={i} style={{
-            width: i === active ? '18px' : '6px', height: '6px',
+            width: i === active ? '18px' : '5px', height: '5px',
             borderRadius: '999px',
-            background: i === active ? proj.accentColor : 'rgba(255,255,255,0.1)',
+            background: i === active ? proj.color : 'rgba(255,255,255,0.08)',
             transition: 'width 0.3s, background 0.3s',
-            boxShadow: i === active ? `0 0 8px ${proj.accentColor}88` : 'none',
+            boxShadow: i === active ? `0 0 6px ${proj.color}88` : 'none',
           }} />
         ))}
       </div>
+      {p.link && (
+        <a href={p.link} target="_blank" rel="noopener noreferrer"
+          style={{
+            fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 600,
+            color: p.color, textDecoration: 'none', pointerEvents: 'auto',
+            padding: '6px 14px', borderRadius: '999px',
+            border: `1px solid ${p.color}44`, background: `${p.color}11`,
+            flexShrink: 0,
+          }}
+        >
+          Voir →
+        </a>
+      )}
     </motion.div>
   );
 }
 
+/* ── Root ── */
 export default function Projects() {
-  const outerRef      = useRef<HTMLDivElement>(null);
-  const titleRef      = useRef<HTMLDivElement>(null);
-  const isTitleInView = useInView(titleRef, { once: true, margin: '-60px' });
+  const outerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const inView   = useInView(titleRef, { once: true });
+  const [active, setActive] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', () => setIsMobile(window.innerWidth < 768));
   }, []);
 
-  const { scrollYProgress } = useScroll({ target: outerRef, offset: ['start start', 'end end'] });
-  /* Remap 0→1 to 0.1→0.9 so card 0 is already active at scroll=0 */
-  const remapped = useTransform(scrollYProgress, [0, 1], [0.1, 0.9]);
-  const smooth = useSpring(remapped, { stiffness: 55, damping: 22, restDelta: 0.001 });
-
-  const cards = projects.map((_, i) => useCardProgress(smooth, i));
-
-  const mobileStops = projects.map((_, i) => i / (N - 1));
-  const mobileVals  = projects.map((_, i) => `${-82 * i}vw`);
-  const mobileX     = useTransform(smooth, mobileStops, mobileVals);
+  useEffect(() => {
+    const outer = outerRef.current;
+    if (!outer) return;
+    const fn = () => {
+      const t = Math.max(0, Math.min(1, -outer.getBoundingClientRect().top / (outer.offsetHeight - window.innerHeight)));
+      setActive(Math.min(PROJECTS.length - 1, Math.floor(t * PROJECTS.length)));
+    };
+    window.addEventListener('scroll', fn, { passive: true });
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
 
   return (
     <div ref={outerRef} style={{ height: '500vh', position: 'relative' }}>
-      <div style={{
-        position: 'sticky', top: 0, height: '100vh',
-        overflow: 'hidden', background: '#000',
-        display: 'flex', flexDirection: 'column',
-      }}>
+      <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: '#030303' }}>
 
         {/* Header */}
-        <div ref={titleRef} style={{ padding: 'clamp(24px,4vh,44px) 6vw 12px', flexShrink: 0 }}>
+        <div ref={titleRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, padding: 'clamp(22px,4vh,42px) 6vw 0', pointerEvents: 'none' }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={isTitleInView ? { opacity: 1, y: 0 } : {}}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             style={{ display: 'flex', alignItems: 'baseline', gap: '16px', flexWrap: 'wrap' }}
           >
-            <p style={{ fontFamily: 'JetBrains Mono, monospace', color: '#3d3320', fontSize: '0.75rem', letterSpacing: '0.15em', margin: 0 }}>
-              {'< 02 />'}
-            </p>
-            <h2 style={{
-              fontFamily: 'Archivo Black, Arial Black, sans-serif',
-              fontSize: 'clamp(1.75rem, 4vw, 3rem)',
-              fontWeight: 900, color: '#f1f5f9',
-              lineHeight: 1, margin: 0, letterSpacing: '-0.04em',
-            }}>
+            <p style={{ fontFamily: 'JetBrains Mono, monospace', color: '#3d3320', fontSize: '0.75rem', letterSpacing: '0.15em', margin: 0 }}>{'< 02 />'}</p>
+            <h2 style={{ fontFamily: 'Archivo Black, Arial Black, sans-serif', fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, color: '#f1f5f9', lineHeight: 1, margin: 0, letterSpacing: '-0.04em' }}>
               Projets
             </h2>
             <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#334155', letterSpacing: '0.06em' }}>
-              {N} tracks · scroll →
+              {PROJECTS.length} projets · scroll →
             </span>
           </motion.div>
         </div>
 
-        {/* DESKTOP */}
-        {!isMobile && (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            padding: '0 4vw 80px',
-            overflow: 'hidden',
-          }}>
-            {projects.map((project, i) => (
-              <div key={project.title} style={{
-                width: 'clamp(130px, 15vw, 220px)',
-                height: 'clamp(130px, 15vw, 220px)',
-                flexShrink: 0,
-                position: 'relative',
-              }}>
-                <AlbumCard
-                  project={project}
-                  scale={cards[i].scale}
-                  opacity={cards[i].opacity}
-                  vinylX={cards[i].vinyl}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* 3D */}
+        <Canvas
+          camera={{ position: [0, 1.2, 3], fov: 65, near: 0.1, far: 60 }}
+          dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 1.5)}
+          gl={{ antialias: true, alpha: false }}
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          <Suspense fallback={null}>
+            <ScrollControls pages={5} damping={0.25}>
+              <Scene />
+            </ScrollControls>
+          </Suspense>
+        </Canvas>
 
-        {/* MOBILE */}
-        {isMobile && (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', overflow: 'hidden', position: 'relative', paddingBottom: '80px' }}>
-            <motion.div style={{
-              display: 'flex', alignItems: 'center', gap: '7vw',
-              paddingLeft: '12.5vw', x: mobileX, width: 'max-content',
-            }}>
-              {projects.map((project, i) => (
-                <div key={project.title} style={{ width: '75vw', height: '75vw', flexShrink: 0, position: 'relative' }}>
-                  <AlbumCard
-                    project={project}
-                    scale={cards[i].scale}
-                    opacity={cards[i].opacity}
-                    vinylX={cards[i].vinyl}
-                  />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        )}
-
-        <NowPlaying smooth={smooth} />
+        <HUD active={active} />
       </div>
-
-      <style>{`
-        @keyframes spin    { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        @keyframes shimmer { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        *:focus { outline: none !important; }
-        a { -webkit-tap-highlight-color: transparent; }
-      `}</style>
     </div>
   );
 }
