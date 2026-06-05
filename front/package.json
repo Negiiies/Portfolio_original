@@ -10,8 +10,6 @@
   },
   "dependencies": {
     "@next/font": "^14.0.4",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.0",
     "@studio-freight/lenis": "^1.0.42",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
@@ -31,6 +29,7 @@
   },
   "devDependencies": {
     "@types/gsap": "^3.0.0",
+    "@types/three": "^0.184.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.0.4"
   }
